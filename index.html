@@ -51,6 +51,34 @@
       display: none;
     }
 
+    /* ── Sticky scroll-up bar ── */
+    #scroll-nav {
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      z-index: 90;
+      padding: 14px 48px;
+      background: rgba(245, 245, 243, 0.88);
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+      border-bottom: 1px solid var(--border);
+      opacity: 0;
+      transform: translateY(-100%);
+      transition: opacity 0.3s ease, transform 0.3s cubic-bezier(0.25, 0, 0, 1);
+      pointer-events: none;
+    }
+
+    #scroll-nav.visible {
+      opacity: 1;
+      transform: translateY(0);
+      pointer-events: all;
+    }
+
+    @media (max-width: 600px) {
+      #scroll-nav { padding: 12px 20px; }
+    }
+
     .title-block h1 {
       font-size: clamp(28px, 4vw, 48px);
       font-weight: 300;
@@ -390,6 +418,16 @@
 <body>
 
   <div id="fade"></div>
+
+  <!-- ── Sticky scroll-up nav ── -->
+  <nav id="scroll-nav">
+    <button class="back-btn" id="scroll-back-btn">
+      <svg viewBox="0 0 13 13" fill="none" stroke="currentColor" stroke-width="1.5">
+        <path d="M8 2L3 6.5 8 11"/>
+      </svg>
+      Eshchar Zychlinski
+    </button>
+  </nav>
 
   <header>
     <div class="title-block">
@@ -789,6 +827,7 @@
     }
 
     function goHome() {
+      scrollNav.classList.remove('visible');
       transition(homeView, workView, () => {
         document.body.classList.remove('work-open');
         workContent.innerHTML = '';
@@ -803,6 +842,28 @@
     }
 
     document.getElementById('back-btn').addEventListener('click', goHome);
+    document.getElementById('scroll-back-btn').addEventListener('click', goHome);
+
+    // ── Scroll-up sticky nav ──
+    const scrollNav = document.getElementById('scroll-nav');
+    let lastY = 0;
+    let ticking = false;
+
+    window.addEventListener('scroll', () => {
+      if (ticking) return;
+      ticking = true;
+      requestAnimationFrame(() => {
+        const y = window.scrollY;
+        const inWorkView = document.body.classList.contains('work-open');
+        if (inWorkView && y > 80 && y < lastY) {
+          scrollNav.classList.add('visible');
+        } else {
+          scrollNav.classList.remove('visible');
+        }
+        lastY = y;
+        ticking = false;
+      });
+    });
   </script>
 </body>
 </html>
