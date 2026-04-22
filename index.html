@@ -263,6 +263,116 @@
       width: 100%;
       height: auto;
       border-radius: var(--radius);
+      opacity: 0;
+      transition: opacity 0.4s ease;
+    }
+
+    .work-image.img-loaded { opacity: 1; }
+
+    /* Shimmer skeleton shown while src hasn't been set yet */
+    .work-image[data-src] {
+      min-height: 320px;
+      background: linear-gradient(
+        90deg,
+        var(--surface) 0%,
+        #e4e4e2 50%,
+        var(--surface) 100%
+      );
+      background-size: 200% 100%;
+      animation: shimmer 1.6s ease-in-out infinite;
+    }
+
+    @keyframes shimmer {
+      0%   { background-position: 200% 0; }
+      100% { background-position: -200% 0; }
+    }
+
+    /* ── Lightbox overlay ── */
+    #lightbox {
+      display: none;
+      position: fixed;
+      inset: 0;
+      z-index: 200;
+      background: rgba(0, 0, 0, 0.88);
+      align-items: center;
+      justify-content: center;
+      cursor: zoom-out;
+    }
+
+    #lightbox.open {
+      display: flex;
+      animation: lbFadeIn 0.22s ease;
+    }
+
+    @keyframes lbFadeIn {
+      from { opacity: 0; }
+      to   { opacity: 1; }
+    }
+
+    #lightbox img {
+      max-width: min(92vw, 1400px);
+      max-height: 92vh;
+      object-fit: contain;
+      border-radius: var(--radius);
+      box-shadow: 0 24px 80px rgba(0,0,0,0.6);
+      pointer-events: none;
+      animation: lbScaleIn 0.22s cubic-bezier(0.25, 0, 0, 1);
+    }
+
+    @keyframes lbScaleIn {
+      from { transform: scale(0.95); opacity: 0; }
+      to   { transform: scale(1);    opacity: 1; }
+    }
+
+    #lightbox-close {
+      position: fixed;
+      top: 20px;
+      right: 24px;
+      background: none;
+      border: none;
+      color: rgba(255,255,255,0.7);
+      font-size: 28px;
+      line-height: 1;
+      cursor: pointer;
+      padding: 4px 8px;
+      transition: color 0.15s;
+    }
+
+    #lightbox-close:hover { color: #fff; }
+
+    #lightbox-prev,
+    #lightbox-next {
+      position: fixed;
+      top: 50%;
+      transform: translateY(-50%);
+      background: none;
+      border: none;
+      color: rgba(255,255,255,0.6);
+      font-size: 56px;
+      line-height: 1;
+      cursor: pointer;
+      padding: 0 20px;
+      transition: color 0.15s;
+      user-select: none;
+    }
+
+    #lightbox-prev { left: 0; }
+    #lightbox-next { right: 0; }
+    #lightbox-prev:hover,
+    #lightbox-next:hover { color: #fff; }
+
+    #lightbox-counter {
+      position: fixed;
+      bottom: 20px;
+      left: 50%;
+      transform: translateX(-50%);
+      color: rgba(255,255,255,0.5);
+      font-size: 11px;
+      letter-spacing: 0.1em;
+    }
+
+    .work-image.zoomable {
+      cursor: zoom-in;
     }
 
     @media (max-width: 600px) {
@@ -310,6 +420,62 @@
     </div>
     <div class="work-content" id="work-content"></div>
   </div>
+
+  <!-- ── Lightbox ── -->
+  <div id="lightbox">
+    <button id="lightbox-close" aria-label="Close">&#x2715;</button>
+    <button id="lightbox-prev" aria-label="Previous">&#x2039;</button>
+    <img id="lightbox-img" src="" alt="" />
+    <button id="lightbox-next" aria-label="Next">&#x203a;</button>
+    <div id="lightbox-counter"></div>
+  </div>
+
+  <script>
+    // ── Lightbox ──
+    const lightbox        = document.getElementById('lightbox');
+    const lightboxImg     = document.getElementById('lightbox-img');
+    const lightboxCounter = document.getElementById('lightbox-counter');
+    const lightboxPrev    = document.getElementById('lightbox-prev');
+    const lightboxNext    = document.getElementById('lightbox-next');
+
+    let lbImages = [];  // array of { src, alt }
+    let lbIndex  = 0;
+
+    function showLightboxAt(index) {
+      lbIndex = (index + lbImages.length) % lbImages.length;
+      lightboxImg.src = lbImages[lbIndex].src;
+      lightboxImg.alt = lbImages[lbIndex].alt;
+      lightboxCounter.textContent = `${lbIndex + 1} / ${lbImages.length}`;
+      lightboxPrev.style.visibility = lbImages.length > 1 ? 'visible' : 'hidden';
+      lightboxNext.style.visibility = lbImages.length > 1 ? 'visible' : 'hidden';
+    }
+
+    function openLightbox(images, startIndex) {
+      lbImages = images;
+      lightbox.classList.add('open');
+      document.body.style.overflow = 'hidden';
+      showLightboxAt(startIndex);
+    }
+
+    function closeLightbox() {
+      lightbox.classList.remove('open');
+      document.body.style.overflow = '';
+    }
+
+    lightbox.addEventListener('click', e => {
+      if (e.target === lightbox || e.target === lightboxImg) closeLightbox();
+    });
+    document.getElementById('lightbox-close').addEventListener('click', closeLightbox);
+    lightboxPrev.addEventListener('click', e => { e.stopPropagation(); showLightboxAt(lbIndex - 1); });
+    lightboxNext.addEventListener('click', e => { e.stopPropagation(); showLightboxAt(lbIndex + 1); });
+
+    document.addEventListener('keydown', e => {
+      if (!lightbox.classList.contains('open')) return;
+      if (e.key === 'Escape')      closeLightbox();
+      if (e.key === 'ArrowRight')  showLightboxAt(lbIndex + 1);
+      if (e.key === 'ArrowLeft')   showLightboxAt(lbIndex - 1);
+    });
+  </script>
 
   <script>
     const featuredWorks = [
@@ -580,13 +746,44 @@
           workContent.appendChild(wrap);
         }
 
-        work.images.forEach(src => {
+        const zoomable = work.id === 'Genway-UI';
+        const lbList = zoomable ? work.images.map(s => ({ src: s, alt: work.title })) : [];
+
+        // First image loads immediately; the rest load as the user scrolls
+        work.images.forEach((src, i) => {
           const img = document.createElement('img');
-          img.className = 'work-image';
-          img.src = src;
+          img.className = 'work-image' + (zoomable ? ' zoomable' : '');
           img.alt = work.title;
-          img.loading = 'lazy';
+          if (zoomable) {
+            img.addEventListener('click', () => openLightbox(lbList, i));
+          }
+          if (i === 0) {
+            img.src = src;
+            img.onload = () => img.classList.add('img-loaded');
+            if (img.complete) img.classList.add('img-loaded');
+          } else {
+            img.dataset.src = src; // triggers shimmer skeleton via CSS
+          }
           workContent.appendChild(img);
+        });
+
+        // Intersection Observer: reveal images 400px before they enter viewport
+        const lazyIO = new IntersectionObserver((entries, observer) => {
+          entries.forEach(entry => {
+            if (!entry.isIntersecting) return;
+            const img = entry.target;
+            img.src = img.dataset.src;
+            delete img.dataset.src;
+            img.onload = () => img.classList.add('img-loaded');
+            if (img.complete) img.classList.add('img-loaded');
+            observer.unobserve(img);
+          });
+        }, { rootMargin: '0px 0px 400px 0px' });
+
+        // rAF lets the browser compute layout before we observe,
+        // so off-screen images don't all fire immediately
+        requestAnimationFrame(() => {
+          workContent.querySelectorAll('img[data-src]').forEach(img => lazyIO.observe(img));
         });
       });
     }
