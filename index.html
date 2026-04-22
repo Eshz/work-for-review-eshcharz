@@ -1,0 +1,611 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Work for Review</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg: #f5f5f3;
+      --surface: #ebebea;
+      --border: #ddd;
+      --text-primary: #111;
+      --text-secondary: #999;
+      --gap: 2px;
+      --radius: 4px;
+    }
+
+    html { scroll-behavior: smooth; }
+
+    body {
+      background: var(--bg);
+      color: var(--text-primary);
+      font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;
+      font-size: 13px;
+      letter-spacing: 0.02em;
+      min-height: 100vh;
+    }
+
+    /* ── Fade overlay for page transitions ── */
+    #fade {
+      position: fixed;
+      inset: 0;
+      background: var(--bg);
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.28s ease;
+      z-index: 99;
+    }
+    #fade.on { opacity: 1; pointer-events: all; }
+
+    /* ── Header ── */
+    header {
+      padding: 48px 48px 32px;
+      border-bottom: 1px solid var(--border);
+      transition: opacity 0.3s ease;
+    }
+
+    body.work-open header {
+      display: none;
+    }
+
+    .title-block h1 {
+      font-size: clamp(28px, 4vw, 48px);
+      font-weight: 300;
+      letter-spacing: -0.02em;
+      line-height: 1;
+    }
+
+    .title-block p {
+      margin-top: 8px;
+      color: var(--text-secondary);
+      font-size: 12px;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+    }
+
+    /* ── Views ── */
+    .view { display: none; }
+    .view.active { display: block; }
+
+    /* ── Featured Genway tiles ── */
+    .featured-section {
+      display: flex;
+      gap: 6px;
+      padding: 24px 24px 0;
+    }
+
+    .featured-tile {
+      flex: 1;
+      aspect-ratio: 1 / 1;
+      background: var(--surface) center/cover no-repeat;
+      border-radius: var(--radius);
+      display: flex;
+      align-items: flex-end;
+      justify-content: flex-start;
+      cursor: pointer;
+      position: relative;
+      overflow: hidden;
+      animation: fadeUp 0.55s cubic-bezier(0.25, 0, 0, 1) both;
+    }
+
+    .featured-tile::after {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background: linear-gradient(transparent 40%, rgba(0,0,0,0.45));
+      opacity: 0;
+      transition: opacity 0.3s ease;
+    }
+
+    .featured-tile:hover::after { opacity: 1; }
+
+    .featured-label {
+      position: relative;
+      z-index: 1;
+      padding: 16px 18px;
+      font-size: clamp(13px, 1.4vw, 18px);
+      font-weight: 300;
+      letter-spacing: -0.01em;
+      color: #fff;
+      opacity: 0;
+      transition: opacity 0.3s ease;
+      text-shadow: 0 1px 8px rgba(0,0,0,0.4);
+    }
+
+    .featured-tile:hover .featured-label { opacity: 1; }
+
+    .featured-tile.logo-tile {
+      background: #fff;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .featured-tile.logo-tile::after {
+      background: rgba(0,0,0,0.04);
+    }
+
+    .featured-tile.logo-tile .featured-label {
+      color: #111;
+      text-shadow: none;
+      position: absolute;
+      bottom: 0; left: 0;
+    }
+
+    .featured-logo {
+      width: 55%;
+      height: 55%;
+      object-fit: contain;
+      position: relative;
+      z-index: 0;
+    }
+
+    /* ── Section divider ── */
+    .section-label {
+      padding: 36px 48px 16px;
+      font-size: 10px;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      color: var(--text-secondary);
+    }
+
+    /* ── Home gallery ── */
+    .gallery {
+      padding: 0 24px 24px;
+      columns: 3 280px;
+      column-gap: 6px;
+    }
+
+    @keyframes fadeUp {
+      from { opacity: 0; transform: translateY(14px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+
+    .gallery-item {
+      break-inside: avoid;
+      position: relative;
+      overflow: hidden;
+      cursor: pointer;
+      margin-bottom: 6px;
+      background: var(--surface);
+      border-radius: var(--radius);
+      animation: fadeUp 0.55s cubic-bezier(0.25, 0, 0, 1) both;
+    }
+
+    .gallery-item img {
+      display: block;
+      width: 100%;
+      height: auto;
+      transition: transform 0.5s cubic-bezier(0.25, 0, 0, 1);
+    }
+
+    .gallery-item:hover img { transform: scale(1.03); }
+
+    .gallery-item .caption {
+      position: absolute;
+      bottom: 0; left: 0; right: 0;
+      padding: 40px 16px 14px;
+      background: linear-gradient(transparent, rgba(0,0,0,0.5));
+      color: #fff;
+      font-size: 11px;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      opacity: 0;
+      transition: opacity 0.25s ease;
+    }
+
+    .gallery-item:hover .caption { opacity: 1; }
+
+    /* ── Work detail view ── */
+    #work-view { min-height: 100vh; }
+
+    .work-nav {
+      padding: 36px 48px 0;
+    }
+
+    .back-btn {
+      background: none;
+      border: none;
+      cursor: pointer;
+      color: var(--text-secondary);
+      font-size: 11px;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      padding: 0;
+      transition: color 0.2s;
+      display: inline-flex;
+      align-items: center;
+      gap: 7px;
+    }
+
+    .back-btn:hover { color: var(--text-primary); }
+
+    .back-btn svg { width: 13px; height: 13px; flex-shrink: 0; }
+
+    .work-content {
+      max-width: 960px;
+      margin: 0 auto;
+      padding: 40px 48px 100px;
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+    }
+
+    .work-title {
+      font-size: clamp(22px, 3vw, 40px);
+      font-weight: 300;
+      letter-spacing: -0.02em;
+      margin-bottom: 36px;
+    }
+
+    /* Vimeo embed */
+    .video-wrap {
+      position: relative;
+      width: 100%;
+      padding-bottom: 56.25%;
+      margin-bottom: 4px;
+      background: #000;
+      border-radius: var(--radius);
+      overflow: hidden;
+    }
+
+    .video-wrap iframe {
+      position: absolute;
+      inset: 0;
+      width: 100%; height: 100%;
+      border: none;
+    }
+
+    .work-image {
+      display: block;
+      width: 100%;
+      height: auto;
+      border-radius: var(--radius);
+    }
+
+    @media (max-width: 600px) {
+      header { padding: 28px 20px 20px; }
+      .featured-section { flex-direction: column; }
+      .featured-tile { min-height: 160px; }
+      .section-label { padding: 28px 20px 12px; }
+      .gallery { padding: 0 1px 1px; column-gap: 1px; }
+      .gallery-item { margin-bottom: 1px; }
+      .work-nav { padding: 24px 20px 0; }
+      .work-content { padding: 28px 20px 60px; }
+    }
+  </style>
+</head>
+<body>
+
+  <div id="fade"></div>
+
+  <header>
+    <div class="title-block">
+      <h1>Work for Review</h1>
+      <p>Eshchar Zychlinski</p>
+    </div>
+  </header>
+
+  <!-- ── Home view ── -->
+  <div id="home-view" class="view active">
+
+    <div class="featured-section" id="featured-section"></div>
+
+    <div class="section-label">Past creative work</div>
+
+    <main class="gallery" id="gallery"></main>
+  </div>
+
+  <!-- ── Work detail view ── -->
+  <div id="work-view" class="view">
+    <div class="work-nav">
+      <button class="back-btn" id="back-btn">
+        <svg viewBox="0 0 13 13" fill="none" stroke="currentColor" stroke-width="1.5">
+          <path d="M8 2L3 6.5 8 11"/>
+        </svg>
+        Eshchar Zychlinski
+      </button>
+    </div>
+    <div class="work-content" id="work-content"></div>
+  </div>
+
+  <script>
+    const featuredWorks = [
+      {
+        id: 'Genway-UI',
+        title: 'Genway — UI',
+        thumbnail: 'works/Genway-UI/01.png',
+        logoThumbnail: 'works/Genway-UI/thumbnail-logo-genway.svg',
+        vimeoId: null,
+        images: [
+          'works/Genway-UI/01.png',
+          'works/Genway-UI/07.png',
+          'works/Genway-UI/XL 1.png',
+          'works/Genway-UI/Frame 2147230458.png',
+          'works/Genway-UI/Projects.png',
+          'works/Genway-UI/Create your first Genway project.png',
+          'works/Genway-UI/Customize step - 01.png',
+          'works/Genway-UI/Step 3 - Allow permissions.png',
+          'works/Genway-UI/Step 3 - Allow permissions-1.png',
+          'works/Genway-UI/Welcome to Genway, create your first project today.png',
+          'works/Genway-UI/outro-intro.png',
+        ]
+      },
+      {
+        id: 'Genway-Creative',
+        title: 'Genway — Creative',
+        thumbnail: 'works/Genway-Creative/cover.png',
+        vimeoId: null,
+        images: [
+          'works/Genway-Creative/cover.png',
+          'works/Genway-Creative/card-01.png',
+          'works/Genway-Creative/card-02.png',
+          'works/Genway-Creative/card-03.png',
+          'works/Genway-Creative/card-04.png',
+          'works/Genway-Creative/card-05.png',
+          'works/Genway-Creative/card-06.png',
+          'works/Genway-Creative/sheet.png',
+          'works/Genway-Creative/sheet-01.png',
+          'works/Genway-Creative/sheet-02.png',
+          'works/Genway-Creative/stickers.png',
+          'works/Genway-Creative/Text + Visual.png',
+          'works/Genway-Creative/Text only.png',
+          'works/Genway-Creative/Visual only.png',
+          'works/Genway-Creative/1764580661764 1.png',
+          'works/Genway-Creative/1764580662003 1.png',
+        ]
+      },
+    ];
+
+    const works = [
+      {
+        id: 'GeoTrails',
+        title: 'GeoTrails',
+        thumbnail: 'works/GeoTrails/thumbnail_ezgif.com-optimize-2.gif',
+        vimeoId: '281186102',
+        images: [
+          'works/GeoTrails/02_g002.jpg',
+          'works/GeoTrails/03_g001.jpg',
+          'works/GeoTrails/04_g003.jpg',
+        ]
+      },
+      {
+        id: 'Golden-Age',
+        title: 'Golden Age',
+        thumbnail: 'works/Golden-Age/thumbnail_002.jpg',
+        vimeoId: null,
+        images: [
+          'works/Golden-Age/01_002.jpg',
+          'works/Golden-Age/02_long_letter3.png',
+          'works/Golden-Age/03_long_letter1.png',
+          'works/Golden-Age/04_long_letter2.png',
+          'works/Golden-Age/05_1cd42359217391.5a1a0642350c6.jpg',
+          'works/Golden-Age/06_0965ac59217391.5a1a06423579a.jpg',
+          'works/Golden-Age/07_7560df59217391.5a1a0965a352b.jpg',
+          'works/Golden-Age/08_8187a359217391.5a1a0965a3a6d.jpg',
+          'works/Golden-Age/09_0b0f0659217391.5a1a064238b1d.jpg',
+          'works/Golden-Age/10_d851dc59217391.5a1a064236083.jpg',
+          'works/Golden-Age/11_c7dc2359217391.5a1a096554fb7.png',
+          'works/Golden-Age/12_ffc98759217391.5a1a096554553.png',
+          'works/Golden-Age/13_e66c3359217391.5a1a064237f70.jpg',
+          'works/Golden-Age/14_12f31b59217391.5a1a064235b96.jpg',
+          'works/Golden-Age/15_0323ea59217391.5a1a0642368f2.jpg',
+        ]
+      },
+      {
+        id: 'Letters',
+        title: 'Letters',
+        thumbnail: 'works/Letters/thumbnail_7.jpg',
+        vimeoId: null,
+        images: [
+          'works/Letters/01_7.jpg',
+          'works/Letters/02_7.jpg',
+          'works/Letters/03_6.jpg',
+          'works/Letters/04_1.jpg',
+          'works/Letters/05_15.jpg',
+          'works/Letters/06_16.jpg',
+          'works/Letters/07_17.jpg',
+          'works/Letters/08_18.jpg',
+          'works/Letters/09_19.jpg',
+          'works/Letters/10_21.jpg',
+        ]
+      },
+      {
+        id: 'Life-of-a-Tree',
+        title: 'Life of a Tree',
+        thumbnail: 'works/Life-of-a-Tree/thumbnail_cycle.jpg',
+        vimeoId: '283906151',
+        images: [
+          'works/Life-of-a-Tree/01_cycle.jpg',
+        ]
+      },
+      {
+        id: 'Playground',
+        title: 'Playground',
+        thumbnail: 'works/Playground/thumbnail_ezgif.com-optimize.gif',
+        vimeoId: '254070911',
+        images: []
+      },
+      {
+        id: 'The-Flying-Dutchman',
+        title: 'The Flying Dutchman',
+        thumbnail: 'works/The-Flying-Dutchman/thumbnail_Zychlinski-Eshchar-005.jpg',
+        vimeoId: '281186266',
+        images: [
+          'works/The-Flying-Dutchman/01_Zychlinski-Eshchar-005.jpg',
+          'works/The-Flying-Dutchman/02_7.jpg',
+          'works/The-Flying-Dutchman/03_6.jpg',
+          'works/The-Flying-Dutchman/04_8.jpg',
+          'works/The-Flying-Dutchman/05_9.jpg',
+          'works/The-Flying-Dutchman/06_2.jpg',
+          'works/The-Flying-Dutchman/07_3.jpg',
+          'works/The-Flying-Dutchman/08_4.jpg',
+          'works/The-Flying-Dutchman/09_5.jpg',
+        ]
+      },
+      {
+        id: 'The-Lady-The-Peddler',
+        title: 'The Lady & The Peddler',
+        thumbnail: 'works/The-Lady-The-Peddler/thumbnail_005.jpg',
+        vimeoId: '253323284',
+        images: [
+          'works/The-Lady-The-Peddler/01_005.jpg',
+          'works/The-Lady-The-Peddler/02_1.jpg',
+          'works/The-Lady-The-Peddler/03_2.jpg',
+          'works/The-Lady-The-Peddler/04_3.jpg',
+          'works/The-Lady-The-Peddler/05_4.jpg',
+          'works/The-Lady-The-Peddler/06_5.jpg',
+          'works/The-Lady-The-Peddler/07_6.jpg',
+          'works/The-Lady-The-Peddler/08_7.jpg',
+          'works/The-Lady-The-Peddler/09_8.jpg',
+        ]
+      },
+      {
+        id: 'The-North-Star',
+        title: 'The North Star',
+        thumbnail: 'works/The-North-Star/thumbnail_Intro_Stars.jpg',
+        vimeoId: '254782743',
+        images: [
+          'works/The-North-Star/01_Intro_Stars.jpg',
+          'works/The-North-Star/02_Intro_Stars.jpg',
+          'works/The-North-Star/03_Scene2-0-00-06-10.png',
+          'works/The-North-Star/04_Scene3-0-00-06-24.png',
+          'works/The-North-Star/05_Scene4-0-00-06-10.png',
+          'works/The-North-Star/06_Scene5-0-00-00-00.png',
+          'works/The-North-Star/07_Scene6-0-00-04-01.png',
+          'works/The-North-Star/08_Scene7-0-00-01-12.png',
+        ]
+      },
+      {
+        id: 'Trippers',
+        title: 'Trippers',
+        thumbnail: 'works/Trippers/thumbnail_scene0122.jpg',
+        vimeoId: '283981122',
+        images: [
+          'works/Trippers/01_scene0122.jpg',
+        ]
+      },
+      {
+        id: 'Yael-The-Mothers',
+        title: 'Yael & The Mothers',
+        thumbnail: 'works/Yael-The-Mothers/thumbnail_yael.jpg',
+        vimeoId: null,
+        images: [
+          'works/Yael-The-Mothers/01_yael.jpg',
+          'works/Yael-The-Mothers/02_yaelFront.jpg',
+          'works/Yael-The-Mothers/03_digital1920_pdf_no-time.jpg',
+          'works/Yael-The-Mothers/04_cdRGB-1.png',
+          'works/Yael-The-Mothers/05_Cyan.png',
+          'works/Yael-The-Mothers/06_back.jpg',
+        ]
+      },
+    ];
+
+    // ── Build featured tiles ──
+    const featuredSection = document.getElementById('featured-section');
+    featuredWorks.forEach((work, i) => {
+      const tile = document.createElement('div');
+      tile.style.animationDelay = `${i * 0.08}s`;
+
+      if (work.logoThumbnail) {
+        tile.className = 'featured-tile logo-tile';
+        tile.innerHTML = `
+          <img class="featured-logo" src="${work.logoThumbnail}" alt="${work.title}" />
+          <span class="featured-label">${work.title}</span>
+        `;
+      } else {
+        tile.className = 'featured-tile';
+        tile.style.backgroundImage = `url('${work.thumbnail}')`;
+        tile.innerHTML = `<span class="featured-label">${work.title}</span>`;
+      }
+
+      tile.addEventListener('click', () => openWork(work));
+      featuredSection.appendChild(tile);
+    });
+
+    // ── Build gallery ──
+    const gallery = document.getElementById('gallery');
+
+    works.forEach((work, i) => {
+      const item = document.createElement('div');
+      item.className = 'gallery-item';
+      item.style.animationDelay = `${i * 0.045}s`;
+      item.innerHTML = `
+        <img src="${work.thumbnail}" alt="${work.title}" loading="lazy" />
+        <span class="caption">${work.title}</span>
+      `;
+      item.addEventListener('click', () => openWork(work));
+      gallery.appendChild(item);
+    });
+
+    // ── Transitions ──
+    const fade = document.getElementById('fade');
+    const homeView = document.getElementById('home-view');
+    const workView = document.getElementById('work-view');
+    const workContent = document.getElementById('work-content');
+
+    function transition(show, hide, before) {
+      fade.classList.add('on');
+      setTimeout(() => {
+        hide.classList.remove('active');
+        before();
+        show.classList.add('active');
+        window.scrollTo({ top: 0, behavior: 'instant' });
+        requestAnimationFrame(() => {
+          fade.classList.remove('on');
+        });
+      }, 280);
+    }
+
+    function openWork(work) {
+      transition(workView, homeView, () => {
+        document.body.classList.add('work-open');
+        workContent.innerHTML = '';
+
+        const title = document.createElement('h2');
+        title.className = 'work-title';
+        title.textContent = work.title;
+        workContent.appendChild(title);
+
+        if (work.vimeoId) {
+          const wrap = document.createElement('div');
+          wrap.className = 'video-wrap';
+          wrap.innerHTML = `<iframe
+            src="https://player.vimeo.com/video/${work.vimeoId}?color=111&title=0&byline=0&portrait=0"
+            allow="autoplay; fullscreen; picture-in-picture"
+            allowfullscreen
+          ></iframe>`;
+          workContent.appendChild(wrap);
+        }
+
+        work.images.forEach(src => {
+          const img = document.createElement('img');
+          img.className = 'work-image';
+          img.src = src;
+          img.alt = work.title;
+          img.loading = 'lazy';
+          workContent.appendChild(img);
+        });
+      });
+    }
+
+    function goHome() {
+      transition(homeView, workView, () => {
+        document.body.classList.remove('work-open');
+        workContent.innerHTML = '';
+        // Re-trigger gallery stagger animation
+        document.querySelectorAll('.gallery-item').forEach((item, i) => {
+          item.style.animation = 'none';
+          item.offsetHeight;
+          item.style.animation = '';
+          item.style.animationDelay = `${i * 0.045}s`;
+        });
+      });
+    }
+
+    document.getElementById('back-btn').addEventListener('click', goHome);
+  </script>
+</body>
+</html>
