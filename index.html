@@ -523,6 +523,10 @@
         thumbnail: 'works/Genway-UI/01.png',
         logoThumbnail: 'works/Genway-UI/thumbnail-logo-genway.svg',
         vimeoId: null,
+        driveVideos: [
+          '1gsmkZmwJ1Un17TASo94y9AfHr8TB-Atn',
+          '1LsnguqI9LvaO-y6RU2f9_HcAMYM2paVJ',
+        ],
         images: [
           'works/Genway-UI/01.png',
           'works/Genway-UI/07.png',
@@ -783,6 +787,17 @@
           ></iframe>`;
           workContent.appendChild(wrap);
         }
+
+        (work.driveVideos || []).forEach(id => {
+          const wrap = document.createElement('div');
+          wrap.className = 'video-wrap';
+          wrap.innerHTML = `<iframe
+            src="https://drive.google.com/file/d/${id}/preview"
+            allow="autoplay"
+            allowfullscreen
+          ></iframe>`;
+          workContent.appendChild(wrap);
+        });
 
         const zoomable = work.id === 'Genway-UI';
         const lbList = zoomable ? work.images.map(s => ({ src: s, alt: work.title })) : [];
